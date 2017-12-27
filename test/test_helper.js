@@ -1,30 +1,22 @@
-// mongoose setup
 const mongoose = require('mongoose');
 
-mongoose.Promise = global.Promise;
-
-// connect to mongoose before all tests
-before((done) => {
-  mongoose.connect('mongodb://localhost/users_test', {
-    useMongoClient: true,
-  });
+before(done => {
+  mongoose.connect('mongodb://localhost/muber_test');
   mongoose.connection
-    .once('open', () => { done(); })
-    .on ('error', (error) => {
+    .once('open', () => done())
+    .on('error', err => {
       console.warn('Warning', error);
     });
 });
 
-  
-// hook, helps us clear the db each time we run each test
-//  from mocha
-beforeEach((done) => {
-  const { users, comments, blogposts } = mongoose.connection.collections;
-  users.drop(() => {
-    comments.drop(() => {
-      blogposts.drop(() => {
-        done();
-      });
-    });
-  });
+// we set up this mongo connection here, instead of app.js
+// because mocha might exceute a test before we connect
+// unless we do it here
+
+beforeEach(done => {
+  const { drivers } = mongoose.connection.collections;
+  drivers.drop()
+    .then(() => drivers.ensureIndex({ 'geometry.coordinates': '2dsphere' }))
+    .then(() => done())
+    .catch(() => done());
 });
